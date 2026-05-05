@@ -7,6 +7,7 @@
 		</p>
 		<p class="text-surface-600-400">
 			See <a href="/activities" class="anchor">Activities</a>
+			or browse the <a href="/design" class="anchor">Design System</a>.
 		</p>
 	</div>
 </div>

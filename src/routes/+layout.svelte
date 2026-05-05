@@ -31,7 +31,8 @@
 			create: 'Create',
 			user: 'My Account',
 			login: 'Login',
-			logout: 'Logout'
+			logout: 'Logout',
+			design: 'Design System'
 		};
 
 		let path = '';
