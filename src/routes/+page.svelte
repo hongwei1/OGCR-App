@@ -6,7 +6,8 @@
 			An example application to interact with the OGCR entities
 		</p>
 		<p class="text-surface-600-400">
-			See <a href="/activities" class="anchor">Activities</a>
+			See <a href="/activities" class="anchor">Activities</a>,
+			open <a href="/trading" class="anchor">Trading</a>,
 			or browse the <a href="/design" class="anchor">Design System</a>.
 		</p>
 	</div>

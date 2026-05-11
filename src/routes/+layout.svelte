@@ -32,7 +32,18 @@
 			user: 'My Account',
 			login: 'Login',
 			logout: 'Logout',
-			design: 'Design System'
+			design: 'Design System',
+			trading: 'Trading',
+			banks: 'Bank',
+			accounts: 'Account',
+			views: 'View',
+			offers: 'Offers',
+			market: 'Market',
+			orders: 'Orders',
+			matches: 'Matches',
+			trades: 'Trades',
+			settlements: 'Settlements',
+			withdrawals: 'Withdrawals'
 		};
 
 		let path = '';
