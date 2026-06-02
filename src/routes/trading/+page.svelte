@@ -3,12 +3,29 @@
 	import { TrendingUp, ChevronRight, Landmark } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { untrack } from 'svelte';
+	import CurrentBankPicker from '$lib/components/CurrentBankPicker.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	interface TradingAccount {
+		bank_id: string;
+		id: string;
+		label?: string;
+		account_type?: string;
+		views?: { id: string; short_name?: string }[];
+	}
 
 	let bankId = $state(untrack(() => data.defaults.bank_id));
 	let accountId = $state(untrack(() => data.defaults.account_id));
 	let viewId = $state(untrack(() => data.defaults.view_id || 'owner'));
+
+	let showAllBanks = $state(false);
+
+	let allAccounts = $derived((data.accounts ?? []) as TradingAccount[]);
+	let visibleAccounts = $derived(
+		showAllBanks ? allAccounts : allAccounts.filter((acc) => acc.bank_id === bankId)
+	);
+	let hiddenCount = $derived(allAccounts.length - visibleAccounts.length);
 
 	function tradingUrl(b: string, a: string, v: string) {
 		return `/trading/banks/${encodeURIComponent(b)}/accounts/${encodeURIComponent(a)}/views/${encodeURIComponent(v)}/offers`;
@@ -45,11 +62,40 @@
 			<a href="/login" class="btn preset-filled-primary-500">Login</a>
 		</div>
 	{:else}
-		<div class="space-y-8 max-w-3xl">
+		<div class="space-y-8">
 			<section class="card p-8 preset-filled-surface-100-900">
-				<h2 class="h3 mb-2">Your Accounts</h2>
+				<h2 class="h3 mb-2">Current Bank</h2>
 				<p class="text-surface-600-400 mb-6">
-					Pick an account and view to open the trading screens.
+					Pick the bank you're trading on. This is saved to your OBP profile and used as the default
+					below.
+				</p>
+				<CurrentBankPicker
+					banks={data.banks}
+					selectedBankId={bankId}
+					onSelect={(b) => (bankId = b)}
+				/>
+			</section>
+
+			<section class="card p-8 preset-filled-surface-100-900">
+				<div class="flex flex-wrap items-center justify-between gap-4 mb-2">
+					<h2 class="h3">Your Accounts</h2>
+					{#if allAccounts.length > 0}
+						<button
+							type="button"
+							class="btn btn-sm preset-tonal-primary"
+							onclick={() => (showAllBanks = !showAllBanks)}
+						>
+							{showAllBanks ? 'Show only current bank' : 'Show all banks'}
+						</button>
+					{/if}
+				</div>
+				<p class="text-surface-600-400 mb-6">
+					{#if showAllBanks}
+						Accounts across all your banks. Pick an account and view to open the trading screens.
+					{:else}
+						Accounts at <span class="font-mono">{bankId || '—'}</span>. Pick an account and view to
+						open the trading screens.
+					{/if}
 				</p>
 
 				{#if data.error}
@@ -59,9 +105,9 @@
 					</div>
 				{/if}
 
-				{#if data.accounts && data.accounts.length > 0}
-					<ul class="space-y-3">
-						{#each data.accounts as acc (acc.bank_id + ':' + acc.id)}
+				{#if visibleAccounts.length > 0}
+					<ul class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+						{#each visibleAccounts as acc (acc.bank_id + ':' + acc.id)}
 							<li class="card p-4 preset-filled-surface-50-950">
 								<div class="flex items-start gap-4">
 									<Landmark class="size-6 text-primary-500 shrink-0 mt-1" />
@@ -121,8 +167,21 @@
 							</li>
 						{/each}
 					</ul>
-				{:else if data.accounts && data.accounts.length === 0}
+				{:else if allAccounts.length === 0}
 					<p class="text-surface-600-400">No accounts found for your user.</p>
+				{:else}
+					<p class="text-surface-600-400">
+						No accounts at <span class="font-mono">{bankId || '—'}</span>.
+						{#if hiddenCount > 0}
+							<button
+								type="button"
+								class="anchor"
+								onclick={() => (showAllBanks = true)}
+							>
+								Show {hiddenCount} account{hiddenCount === 1 ? '' : 's'} at other banks
+							</button>
+						{/if}
+					</p>
 				{/if}
 			</section>
 
@@ -133,38 +192,40 @@
 				</p>
 
 				<form onsubmit={go} class="space-y-6">
-					<label class="label">
-						<span class="label-text">Bank ID *</span>
-						<input
-							type="text"
-							bind:value={bankId}
-							class="input"
-							placeholder="e.g., gh.29.uk"
-							required
-						/>
-					</label>
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+						<label class="label">
+							<span class="label-text">Bank ID *</span>
+							<input
+								type="text"
+								bind:value={bankId}
+								class="input"
+								placeholder="e.g., gh.29.uk"
+								required
+							/>
+						</label>
 
-					<label class="label">
-						<span class="label-text">Account ID *</span>
-						<input
-							type="text"
-							bind:value={accountId}
-							class="input"
-							placeholder="e.g., 8ca8a7e4-6d02-40e3-a129-0b2bf89de9f0"
-							required
-						/>
-					</label>
+						<label class="label">
+							<span class="label-text">Account ID *</span>
+							<input
+								type="text"
+								bind:value={accountId}
+								class="input"
+								placeholder="e.g., 8ca8a7e4-6d02-40e3-a129-0b2bf89de9f0"
+								required
+							/>
+						</label>
 
-					<label class="label">
-						<span class="label-text">View ID *</span>
-						<input
-							type="text"
-							bind:value={viewId}
-							class="input"
-							placeholder="e.g., owner"
-							required
-						/>
-					</label>
+						<label class="label">
+							<span class="label-text">View ID *</span>
+							<input
+								type="text"
+								bind:value={viewId}
+								class="input"
+								placeholder="e.g., owner"
+								required
+							/>
+						</label>
+					</div>
 
 					<button type="submit" class="btn preset-filled-primary-500">
 						<span>Open Trading</span>
