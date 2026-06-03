@@ -1,5 +1,9 @@
 node_modules
 
+# Confidential — never commit
+__DO_NOT_COMMIT_/
+_DO_NOT_COMMIT_/
+
 # Output
 .output
 .vercel
