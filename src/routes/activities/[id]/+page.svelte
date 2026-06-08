@@ -359,9 +359,9 @@
 										<p class="text-sm"><span class="font-medium text-surface-600-400">Parcel ID:</span> <span class="break-all">{parcel.parcel_id}</span></p>
 									{/if}
 								</div>
-								{#if parcel.multipolygon_coordinates_geometry}
+								{#if parcel.multipolygon_coordinates}
 									<div>
-										<GeoJsonMap geoJson={parcel.multipolygon_coordinates_geometry} />
+										<GeoJsonMap geoJson={parcel.multipolygon_coordinates} />
 									</div>
 								{/if}
 							</div>
