@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { obp_requests } from '$lib/obp/requests';
 import { ENTITY_ACTIVITY, ENTITY_OPERATOR } from '$lib/constants/entities';
 import { OBPRequestError } from '$lib/obp/errors';
+import { getAllListings, type ActivityListing } from '$lib/marketplace/listings';
 
 interface OperatorRecord {
 	operator_id?: string;
@@ -42,10 +43,30 @@ export const load: PageServerLoad = async ({ locals }) => {
 			// Operators unavailable — cards fall back to "Unknown operator".
 		}
 
-		const enriched = activities.map((a) => ({
-			...a,
-			operator_name: a.operator_id ? operatorNames.get(a.operator_id) ?? null : null
-		}));
+		// Merge the marketplace listing overlay (marketing + commercial terms).
+		// The registry is the boss of the activity's facts; our DB is the boss of
+		// price/credits and the marketing presentation. Kept in its own try so a
+		// listings-store failure still renders the registry activities.
+		let listings = new Map<string, ActivityListing>();
+		try {
+			listings = await getAllListings();
+		} catch {
+			// Listings unavailable — cards fall back to registry-only data.
+		}
+
+		const enriched = activities.map((a) => {
+			const listing = a.activity_id ? listings.get(a.activity_id as string) : undefined;
+			return {
+				...a,
+				operator_name: a.operator_id ? (operatorNames.get(a.operator_id) ?? null) : null,
+				// Listing overlay wins for marketing + commercial fields.
+				summary: listing?.summary ?? a.summary,
+				image: listing?.image ?? a.image,
+				price_per_credit: listing?.price_per_credit ?? null,
+				credits_available: listing?.credits_available ?? null,
+				listed: listing?.listed ?? false
+			};
+		});
 
 		return {
 			isAuthenticated: true,

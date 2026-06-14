@@ -5,6 +5,10 @@ export const ENTITY_PREFIX = env.OBP_ENTITY_PREFIX || DEFAULT_PREFIX;
 
 export const ENTITY_ACTIVITY = `${ENTITY_PREFIX}activity`;
 export const ENTITY_OPERATOR = `${ENTITY_PREFIX}operator`;
+// Junction linking an OBP user to an operator. `relationship` reads user → operator
+// (user is subject): e.g. owner, admin, member, billing_contact. Replaces the
+// email-matching used by getOperatorsForUser once records exist.
+export const ENTITY_USER_OPERATOR_RELATIONSHIP = `${ENTITY_PREFIX}user_operator_relationship`;
 export const ENTITY_PARCEL = `${ENTITY_PREFIX}parcel`;
 export const ENTITY_PARCEL_OWNERSHIP_VERIFICATION = `${ENTITY_PREFIX}parcel_owner_verification`;
 export const ENTITY_ACTIVITY_PARCEL_VERIFICATION = `${ENTITY_PREFIX}activity_parcel_verification`;
@@ -15,6 +19,7 @@ export const ENTITY_ACTIVITY_MONITORING_PERIOD_VERIFICATION = `${ENTITY_PREFIX}a
 export const ENTITY_CONSTANTS = {
 	ENTITY_ACTIVITY,
 	ENTITY_OPERATOR,
+	ENTITY_USER_OPERATOR_RELATIONSHIP,
 	ENTITY_PARCEL,
 	ENTITY_PARCEL_OWNERSHIP_VERIFICATION,
 	ENTITY_ACTIVITY_PARCEL_VERIFICATION,

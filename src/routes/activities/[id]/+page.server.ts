@@ -35,10 +35,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			activityVerResponse,
 			activityMonitoringVerResponse
 		] = await Promise.all([
-			obp_requests.get(
-				`/obp/dynamic-entity/${ENTITY_ACTIVITY}/${activityId}`,
-				accessToken
-			),
+			obp_requests.get(`/obp/dynamic-entity/${ENTITY_ACTIVITY}/${activityId}`, accessToken),
 			obp_requests.get(
 				`/obp/dynamic-entity/${ENTITY_ACTIVITY_PARCEL_VERIFICATION}?${activityIdFilter}`,
 				accessToken
@@ -57,23 +54,21 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		const activity = activityResponse[ENTITY_ACTIVITY] || activityResponse;
 
 		// Activity-level verifications
-		const activityVerifications =
-			activityVerResponse[`${ENTITY_ACTIVITY_VERIFICATION}_list`] || [];
+		const activityVerifications = activityVerResponse[`${ENTITY_ACTIVITY_VERIFICATION}_list`] || [];
 		const activityMonitoringVerifications =
 			activityMonitoringVerResponse[`${ENTITY_ACTIVITY_MONITORING_PERIOD_VERIFICATION}_list`] || [];
 
 		// Get parcel IDs from activity_parcel_verification records
 		const activityParcelVers =
 			activityParcelVerResponse[`${ENTITY_ACTIVITY_PARCEL_VERIFICATION}_list`] || [];
-		const parcelIds = [...new Set(activityParcelVers.map((v: Record<string, unknown>) => v.parcel_id as string))];
+		const parcelIds = [
+			...new Set(activityParcelVers.map((v: Record<string, unknown>) => v.parcel_id as string))
+		];
 
 		// Fetch each parcel and parcel-level verifications
 		const parcelPromises = parcelIds.map(async (parcelId: string) => {
 			const [parcelResponse, ownerVerResponse, monitoringVerResponse] = await Promise.all([
-				obp_requests.get(
-					`/obp/dynamic-entity/${ENTITY_PARCEL}/${parcelId}`,
-					accessToken
-				),
+				obp_requests.get(`/obp/dynamic-entity/${ENTITY_PARCEL}/${parcelId}`, accessToken),
 				obp_requests.get(
 					`/obp/dynamic-entity/${ENTITY_PARCEL_OWNERSHIP_VERIFICATION}?parcel_id=${parcelId}`,
 					accessToken
@@ -160,9 +155,18 @@ export const actions: Actions = {
 			return { success: true, action: 'addActivityVerification' };
 		} catch (error) {
 			if (error instanceof OBPRequestError) {
-				return { success: false, action: 'addActivityVerification', error: error.message, errorDetails: error.toJSON() };
+				return {
+					success: false,
+					action: 'addActivityVerification',
+					error: error.message,
+					errorDetails: error.toJSON()
+				};
 			}
-			return { success: false, action: 'addActivityVerification', error: error instanceof Error ? error.message : 'Unknown error' };
+			return {
+				success: false,
+				action: 'addActivityVerification',
+				error: error instanceof Error ? error.message : 'Unknown error'
+			};
 		}
 	},
 
@@ -191,9 +195,18 @@ export const actions: Actions = {
 			return { success: true, action: 'addMonitoringVerification' };
 		} catch (error) {
 			if (error instanceof OBPRequestError) {
-				return { success: false, action: 'addMonitoringVerification', error: error.message, errorDetails: error.toJSON() };
+				return {
+					success: false,
+					action: 'addMonitoringVerification',
+					error: error.message,
+					errorDetails: error.toJSON()
+				};
 			}
-			return { success: false, action: 'addMonitoringVerification', error: error instanceof Error ? error.message : 'Unknown error' };
+			return {
+				success: false,
+				action: 'addMonitoringVerification',
+				error: error instanceof Error ? error.message : 'Unknown error'
+			};
 		}
 	},
 
@@ -213,26 +226,27 @@ export const actions: Actions = {
 		const formData = await request.formData();
 
 		const values: Record<string, string> = {
-			name: formData.get('name') as string ?? '',
-			summary: formData.get('summary') as string ?? '',
-			description: formData.get('description') as string ?? '',
-			website: formData.get('website') as string ?? '',
-			image: formData.get('image') as string ?? '',
-			media_links: formData.get('media_links') as string ?? '',
-			technologies_practices_processes: formData.get('technologies_practices_processes') as string ?? '',
-			type: formData.get('type') as string ?? '',
-			city: formData.get('city') as string ?? '',
-			country_code: formData.get('country_code') as string ?? '',
-			activity_plan_id: formData.get('activity_plan_id') as string ?? '',
-			start_date: formData.get('start_date') as string ?? '',
-			end_date: formData.get('end_date') as string ?? '',
-			cobenefits: formData.get('cobenefits') as string ?? '',
-			methodologies: formData.get('methodologies') as string ?? '',
-			monitoring_period_start_date: formData.get('monitoring_period_start_date') as string ?? '',
-			monitoring_period_end_date: formData.get('monitoring_period_end_date') as string ?? '',
-			term_commitment: formData.get('term_commitment') as string ?? '',
-			monitoring_period_years: formData.get('monitoring_period_years') as string ?? '',
-			multipolygon_coordinates: formData.get('multipolygon_coordinates') as string ?? ''
+			name: (formData.get('name') as string) ?? '',
+			summary: (formData.get('summary') as string) ?? '',
+			description: (formData.get('description') as string) ?? '',
+			website: (formData.get('website') as string) ?? '',
+			image: (formData.get('image') as string) ?? '',
+			media_links: (formData.get('media_links') as string) ?? '',
+			technologies_practices_processes:
+				(formData.get('technologies_practices_processes') as string) ?? '',
+			type: (formData.get('type') as string) ?? '',
+			city: (formData.get('city') as string) ?? '',
+			country_code: (formData.get('country_code') as string) ?? '',
+			activity_plan_id: (formData.get('activity_plan_id') as string) ?? '',
+			start_date: (formData.get('start_date') as string) ?? '',
+			end_date: (formData.get('end_date') as string) ?? '',
+			cobenefits: (formData.get('cobenefits') as string) ?? '',
+			methodologies: (formData.get('methodologies') as string) ?? '',
+			monitoring_period_start_date: (formData.get('monitoring_period_start_date') as string) ?? '',
+			monitoring_period_end_date: (formData.get('monitoring_period_end_date') as string) ?? '',
+			term_commitment: (formData.get('term_commitment') as string) ?? '',
+			monitoring_period_years: (formData.get('monitoring_period_years') as string) ?? '',
+			multipolygon_coordinates: (formData.get('multipolygon_coordinates') as string) ?? ''
 		};
 
 		const body: Record<string, unknown> = {
@@ -257,7 +271,8 @@ export const actions: Actions = {
 
 		// Parse numeric fields
 		if (values.term_commitment) body.term_commitment = Number(values.term_commitment);
-		if (values.monitoring_period_years) body.monitoring_period_years = Number(values.monitoring_period_years);
+		if (values.monitoring_period_years)
+			body.monitoring_period_years = Number(values.monitoring_period_years);
 
 		// Parse JSON fields
 		if (values.multipolygon_coordinates) {

@@ -12,6 +12,7 @@
 		Coins,
 		Layers,
 		ImageOff,
+		Store,
 		X
 	} from '@lucide/svelte';
 	import { categorizeActivityType, CREDIT_CATEGORIES } from '$lib/constants/creditTypes';
@@ -29,9 +30,10 @@
 		city?: string;
 		country_code?: string;
 		operator_name?: string | null;
-		// Not yet present in the data model — shown as "Not set" until they exist.
+		// Marketplace-owned listing terms (from the listings overlay); null until listed.
 		price_per_credit?: number | string | null;
 		credits_available?: number | string | null;
+		listed?: boolean;
 	}
 
 	let copied = $state(false);
@@ -138,9 +140,13 @@
 
 		{#if data.isAuthenticated}
 			<div class="flex gap-2">
-				<a href="/activities/create" class="btn preset-filled-primary-500">
+				<a href="/activities/list" class="btn preset-filled-primary-500">
+					<Store class="size-4" />
+					<span>List Activity</span>
+				</a>
+				<a href="/activities/create" class="btn preset-outlined-surface-500" title="Create test activity data">
 					<Plus class="size-4" />
-					<span>Create Activity</span>
+					<span>Create (test)</span>
 				</a>
 				<a href="/activities" class="btn preset-outlined-primary-500">
 					<RefreshCw class="size-4" />

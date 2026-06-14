@@ -30,7 +30,7 @@
 			<span>Back</span>
 		</a>
 		<FolderKanban class="size-8 text-primary-500" />
-		<h1 class="h1">Create Activity</h1>
+		<h1 class="h1">Create Activity (test data)</h1>
 	</div>
 
 	{#if !data.isAuthenticated}
@@ -100,6 +100,34 @@
 							placeholder="e.g., Reforestation Berlin"
 							required
 						/>
+					</label>
+
+					<label class="label">
+						<span class="label-text">Operator ID</span>
+						<input
+							type="text"
+							name="operator_id"
+							value={v('operator_id') || (data.myOperators?.[0]?.operator_id ?? '')}
+							class="input"
+							list="my-operators"
+							placeholder="e.g., op_01JS0347FKH"
+						/>
+						{#if data.myOperators?.length}
+							<datalist id="my-operators">
+								{#each data.myOperators as op (op.operator_id)}
+									<option value={op.operator_id}>{op.legal_name ?? op.operator_id}</option>
+								{/each}
+							</datalist>
+							<span class="text-xs text-surface-500">
+								Pre-filled with your operator. Set this to your operator's ID so the activity shows up
+								under <a href="/activities/list" class="anchor">List Activity</a>.
+							</span>
+						{:else}
+							<span class="text-xs text-surface-500">
+								No operator is linked to your email yet — create one (matching your login email) to
+								be able to list this activity.
+							</span>
+						{/if}
 					</label>
 
 					<label class="label">
