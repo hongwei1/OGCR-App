@@ -2,6 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { obp_requests } from '$lib/obp/requests';
 import {
 	ENTITY_ACTIVITY,
+	ENTITY_OPERATOR,
 	ENTITY_PARCEL,
 	ENTITY_PARCEL_OWNERSHIP_VERIFICATION,
 	ENTITY_PARCEL_MONITORING_PERIOD_VERIFICATION,
@@ -52,6 +53,23 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 		// Unwrap activity response
 		const activity = activityResponse[ENTITY_ACTIVITY] || activityResponse;
+
+		// Resolve the operator that owns this activity (operator_id -> legal_name).
+		// Kept in its own try so an operator-fetch failure still renders the activity.
+		const operatorId = (activity as Record<string, unknown>).operator_id as string | undefined;
+		let operatorName: string | null = null;
+		if (operatorId) {
+			try {
+				const operatorResponse = await obp_requests.get(
+					`/obp/dynamic-entity/${ENTITY_OPERATOR}/${operatorId}`,
+					accessToken
+				);
+				const operator = operatorResponse[ENTITY_OPERATOR] || operatorResponse;
+				operatorName = (operator?.legal_name as string) ?? null;
+			} catch {
+				// Operator unavailable — the header falls back to showing the ID only.
+			}
+		}
 
 		// Activity-level verifications
 		const activityVerifications = activityVerResponse[`${ENTITY_ACTIVITY_VERIFICATION}_list`] || [];
@@ -104,6 +122,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		return {
 			isAuthenticated: true,
 			activity,
+			operatorId: operatorId ?? null,
+			operatorName,
 			activityVerifications,
 			activityMonitoringVerifications,
 			parcels,

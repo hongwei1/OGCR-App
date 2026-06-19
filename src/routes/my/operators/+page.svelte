@@ -16,11 +16,11 @@
 
 		{#if data.isAuthenticated}
 			<div class="flex gap-2">
-				<a href="/operators/create" class="btn preset-filled-primary-500">
+				<a href="/my/operators/create" class="btn preset-filled-primary-500">
 					<Plus class="size-4" />
 					<span>Create Operator</span>
 				</a>
-				<a href="/operators" class="btn preset-outlined-primary-500">
+				<a href="/my/operators" class="btn preset-outlined-primary-500">
 					<RefreshCw class="size-4" />
 					<span>Refresh</span>
 				</a>
@@ -47,7 +47,7 @@
 				You're not yet linked to any operator. Create one to act as an operator on the marketplace —
 				it'll be linked to your user so you can list activities.
 			</p>
-			<a href="/operators/create" class="btn preset-filled-primary-500">
+			<a href="/my/operators/create" class="btn preset-filled-primary-500">
 				<Plus class="size-4" />
 				<span>Create Operator</span>
 			</a>
@@ -55,7 +55,10 @@
 	{:else}
 		<div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
 			{#each operators as op (op.user_operator_relationship_id ?? op.operator_id)}
-				<div class="card p-6 preset-filled-surface-100-900 flex flex-col gap-3">
+				<a
+					href="/my/operators/{op.operator_id}"
+					class="card p-6 preset-filled-surface-100-900 hover:preset-tonal transition-colors flex flex-col gap-3"
+				>
 					<div class="flex items-start justify-between gap-2">
 						<h3 class="h4 text-primary-500">{op.legal_name || 'Unnamed operator'}</h3>
 						{#if op.relationship}
@@ -90,7 +93,7 @@
 							</div>
 						{/if}
 					</dl>
-				</div>
+				</a>
 			{/each}
 		</div>
 

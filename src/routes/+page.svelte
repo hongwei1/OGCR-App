@@ -7,7 +7,7 @@
 		</p>
 		<p class="text-surface-600-400">
 			See <a href="/activities" class="anchor">Activities</a>,
-			manage your <a href="/operators" class="anchor">Operators</a>,
+			manage your <a href="/my/operators" class="anchor">Operators</a>,
 			open <a href="/trading" class="anchor">Trading</a>,
 			or browse the <a href="/design" class="anchor">Design System</a>.
 		</p>

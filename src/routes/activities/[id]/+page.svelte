@@ -94,6 +94,14 @@
 				{#if data.activity.activity_id}
 					<p class="text-xs text-surface-600-400">ID: {data.activity.activity_id}</p>
 				{/if}
+				{#if data.operatorId}
+					<p class="text-xs text-surface-600-400">
+						Operator:
+						<a href="/my/operators/{data.operatorId}" class="anchor">
+							{data.operatorName || data.operatorId}
+						</a>
+					</p>
+				{/if}
 			</div>
 		</div>
 

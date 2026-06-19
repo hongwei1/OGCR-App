@@ -12,7 +12,7 @@
 
 <div class="p-8">
 	<div class="flex items-center gap-4 mb-8">
-		<a href="/operators" class="btn preset-outlined-surface-500">
+		<a href="/my/operators" class="btn preset-outlined-surface-500">
 			<ArrowLeft class="size-4" />
 			<span>Back</span>
 		</a>
@@ -37,7 +37,7 @@
 				<p class="text-surface-600-400 mb-4">
 					Your user is now linked to this operator
 					{#if form.relationship?.relationship}as <strong>{form.relationship.relationship}</strong>{/if}.
-					It will appear under <a href="/operators" class="anchor">My Operators</a>, and its
+					It will appear under <a href="/my/operators" class="anchor">My Operators</a>, and its
 					activities can be listed via <a href="/activities/list" class="anchor">List Activity</a>.
 				</p>
 			{:else}
@@ -55,8 +55,8 @@
 			{/if}
 			<pre class="bg-surface-200-800 p-4 rounded overflow-auto text-sm">{JSON.stringify(form.operator, null, 2)}</pre>
 			<div class="flex gap-2 mt-4">
-				<a href="/operators" class="btn preset-filled-primary-500">My Operators</a>
-				<a href="/operators/create" class="btn preset-outlined-surface-500">Create another</a>
+				<a href="/my/operators" class="btn preset-filled-primary-500">My Operators</a>
+				<a href="/my/operators/create" class="btn preset-outlined-surface-500">Create another</a>
 			</div>
 		</div>
 	{:else}

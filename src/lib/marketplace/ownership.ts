@@ -104,3 +104,21 @@ export async function linkUserToOperator(
 	);
 	return (response[ENTITY_USER_OPERATOR_RELATIONSHIP] || response) as UserOperatorRelationship;
 }
+
+/** Update an existing user_operator_relationship record (e.g. change the relationship text). */
+export async function updateUserOperatorRelationship(
+	accessToken: string,
+	relationshipId: string,
+	params: { userId: string; operatorId: string; relationship: string }
+): Promise<UserOperatorRelationship> {
+	const response = await obp_requests.put(
+		`/obp/dynamic-entity/${ENTITY_USER_OPERATOR_RELATIONSHIP}/${relationshipId}`,
+		{
+			user_id: params.userId,
+			operator_id: params.operatorId,
+			relationship: params.relationship
+		},
+		accessToken
+	);
+	return (response[ENTITY_USER_OPERATOR_RELATIONSHIP] || response) as UserOperatorRelationship;
+}
