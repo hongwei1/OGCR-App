@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import { FolderKanban, Copy, Check, MapPin, ShieldCheck, Activity, ArrowLeft, Save, Plus } from '@lucide/svelte';
+	import { FolderKanban, Copy, Check, MapPin, ShieldCheck, Activity, ArrowLeft, Save, Plus, Building2 } from '@lucide/svelte';
 	import GeoJsonMap from '$lib/components/GeoJsonMap.svelte';
 	import { enhance } from '$app/forms';
 
@@ -83,26 +83,37 @@
 	{:else if data.activity}
 
 		<!-- Header -->
-		<div class="flex items-center gap-3 mb-4">
-			<a href="/activities" class="btn preset-outlined-surface-500 btn-sm">
-				<ArrowLeft class="size-4" />
-				<span>Back</span>
-			</a>
-			<FolderKanban class="size-6 text-primary-500" />
-			<div>
-				<h1 class="h3 text-primary-500">{data.activity.name || 'Unnamed Activity'}</h1>
-				{#if data.activity.activity_id}
-					<p class="text-xs text-surface-600-400">ID: {data.activity.activity_id}</p>
-				{/if}
-				{#if data.operatorId}
-					<p class="text-xs text-surface-600-400">
-						Operator:
-						<a href="/my/operators/{data.operatorId}" class="anchor">
-							{data.operatorName || data.operatorId}
-						</a>
-					</p>
-				{/if}
+		<div class="flex items-start justify-between gap-4 mb-4">
+			<div class="flex items-center gap-3 min-w-0">
+				<a href="/activities" class="btn preset-outlined-surface-500 btn-sm">
+					<ArrowLeft class="size-4" />
+					<span>Back</span>
+				</a>
+				<FolderKanban class="size-6 text-primary-500 shrink-0" />
+				<div class="min-w-0">
+					<h1 class="h3 text-primary-500">{data.activity.name || 'Unnamed Activity'}</h1>
+					{#if data.activity.activity_id}
+						<p class="text-xs text-surface-600-400">ID: {data.activity.activity_id}</p>
+					{/if}
+				</div>
 			</div>
+
+			<!-- Operator -->
+			{#if data.operatorId}
+				<a
+					href="/my/operators/{data.operatorId}"
+					class="card p-4 preset-filled-surface-100-900 hover:preset-tonal transition-colors flex items-center gap-3 shrink-0"
+				>
+					<Building2 class="size-7 text-secondary-500 shrink-0" />
+					<div class="min-w-0">
+						<p class="text-xs uppercase tracking-wide text-surface-600-400">Operator</p>
+						<p class="h4 text-secondary-500 truncate">{data.operatorName || data.operatorId}</p>
+						{#if data.operatorName}
+							<p class="text-xs text-surface-600-400 truncate">ID: {data.operatorId}</p>
+						{/if}
+					</div>
+				</a>
+			{/if}
 		</div>
 
 		<!-- Flash messages -->
@@ -420,6 +431,21 @@
 				</div>
 			</div>
 		{/if}
+
+		<!-- Debug: raw activity response + operator resolution -->
+		<details class="mt-6">
+			<summary class="cursor-pointer text-sm text-surface-600-400">Debug: Raw API Response</summary>
+			<div class="mt-2 space-y-3">
+				<div>
+					<p class="text-xs font-semibold text-surface-600-400 mb-1">Operator resolution:</p>
+					<pre class="bg-surface-200-800 p-3 rounded overflow-auto text-xs">{JSON.stringify({ operatorId: data.operatorId, operatorName: data.operatorName }, null, 2)}</pre>
+				</div>
+				<div>
+					<p class="text-xs font-semibold text-surface-600-400 mb-1">Raw activity response:</p>
+					<pre class="bg-surface-200-800 p-3 rounded overflow-auto text-xs">{JSON.stringify(data.rawActivityResponse, null, 2)}</pre>
+				</div>
+			</div>
+		</details>
 
 	{:else}
 		<div class="card p-6 preset-filled-surface-100-900 text-center">

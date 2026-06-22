@@ -127,6 +127,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			activityVerifications,
 			activityMonitoringVerifications,
 			parcels,
+			// Debug: the raw, un-unwrapped activity response so we can verify the
+			// exact operator field name/value the API actually returns.
+			rawActivityResponse: activityResponse,
 			error: null
 		};
 	} catch (error) {
