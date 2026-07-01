@@ -22,7 +22,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 			isAuthenticated: false,
 			activities: null,
 			verifiedActivityIds: [] as string[],
-			referencedActivityIds: [] as string[],
 			error: null
 		};
 	}
@@ -50,11 +49,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 
 		// Resolve verification status per activity via activity_verification.activity_id.
-		// verifiedActivityIds  = referenced by a verification whose status_code is "verified".
-		// referencedActivityIds = referenced by ANY verification (used to derive "unverified").
+		// verifiedActivityIds = referenced by a verification whose status_code is "verified".
+		// Everything else (no record, in_progress, failed) counts as "unverified".
 		// Kept in its own try so a verification-fetch failure still renders the activities.
 		const verifiedActivityIds = new Set<string>();
-		const referencedActivityIds = new Set<string>();
 		try {
 			const verResponse = await obp_requests.get(
 				`/obp/dynamic-entity/${ENTITY_ACTIVITY_VERIFICATION}`,
@@ -65,9 +63,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				status_code?: string;
 			}>;
 			for (const v of verifications) {
-				if (!v.activity_id) continue;
-				referencedActivityIds.add(v.activity_id);
-				if (v.status_code === 'verified') verifiedActivityIds.add(v.activity_id);
+				if (v.activity_id && v.status_code === 'verified') verifiedActivityIds.add(v.activity_id);
 			}
 		} catch {
 			// Verifications unavailable — the verification filter falls back to "All".
@@ -102,7 +98,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 			isAuthenticated: true,
 			activities: enriched,
 			verifiedActivityIds: [...verifiedActivityIds],
-			referencedActivityIds: [...referencedActivityIds],
 			rawResponse: response,
 			error: null
 		};
@@ -112,7 +107,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 				isAuthenticated: true,
 				activities: null,
 				verifiedActivityIds: [] as string[],
-				referencedActivityIds: [] as string[],
 				error: error.message,
 				errorDetails: error.toJSON()
 			};
@@ -122,7 +116,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 			isAuthenticated: true,
 			activities: null,
 			verifiedActivityIds: [] as string[],
-			referencedActivityIds: [] as string[],
 			error: errorMessage
 		};
 	}

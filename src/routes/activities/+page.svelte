@@ -49,11 +49,10 @@
 	let minCredits = $state('');
 	let verificationStatus = $state('all');
 
-	// Verification lookups derived from activity_verification (see +page.server.ts):
-	// verifiedIds = activities with a "verified" verification; referencedIds = activities
-	// referenced by any verification (so "unverified" = not referenced by any).
+	// Verification lookup derived from activity_verification (see +page.server.ts):
+	// verifiedIds = activities with a "verified" verification. Everything else
+	// (no record, in_progress, failed) counts as "unverified".
 	const verifiedIds = $derived(new Set((data.verifiedActivityIds ?? []) as string[]));
-	const referencedIds = $derived(new Set((data.referencedActivityIds ?? []) as string[]));
 
 	const countries = $derived(
 		[...new Set(activities.map((a) => a.country_code).filter(Boolean))].sort() as string[]
@@ -82,15 +81,11 @@
 			if (country !== 'all' && a.country_code !== country) return false;
 
 			// Verification status filter (see issue #1):
-			//   verified   = referenced by a verification whose status_code is "verified"
-			//   unverified = not referenced by ANY verification
-			if (verificationStatus === 'verified' && !(a.activity_id && verifiedIds.has(a.activity_id)))
-				return false;
-			if (
-				verificationStatus === 'unverified' &&
-				!(a.activity_id && !referencedIds.has(a.activity_id))
-			)
-				return false;
+			//   verified   = has a verification whose status_code is "verified"
+			//   unverified = anything else (no record, in_progress, failed)
+			const isVerified = !!(a.activity_id && verifiedIds.has(a.activity_id));
+			if (verificationStatus === 'verified' && !isVerified) return false;
+			if (verificationStatus === 'unverified' && isVerified) return false;
 
 			// Price / credits filters only exclude when the field actually exists,
 			// so cards without that data yet are never hidden.
