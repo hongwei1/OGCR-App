@@ -7,10 +7,23 @@ import {
 } from '$lib/constants/entities';
 import { OBPRequestError } from '$lib/obp/errors';
 import { getAllListings, type ActivityListing } from '$lib/marketplace/listings';
+import { env } from '$env/dynamic/public';
 
 interface OperatorRecord {
 	operator_id?: string;
 	legal_name?: string;
+}
+
+interface DebugCall {
+	label: string;
+	request: {
+		method: string;
+		url: string;
+		headers: Record<string, string>;
+		body: unknown;
+	};
+	response?: unknown;
+	error?: string;
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -22,12 +35,42 @@ export const load: PageServerLoad = async ({ locals }) => {
 			isAuthenticated: false,
 			activities: null,
 			verifiedActivityIds: [] as string[],
+			debugCalls: [] as DebugCall[],
 			error: null
 		};
 	}
 
+	// Every GET made during this load() is recorded here (request + response/error) so the
+	// page's debug panel can show exactly what was sent and received, without re-exposing
+	// the real access token. Mirrors OBPRequests.get()'s own URL/header construction
+	// (src/lib/obp/requests.ts).
+	const debugCalls: DebugCall[] = [];
+	async function debugGet(label: string, endpoint: string): Promise<any> {
+		const request = {
+			method: 'GET',
+			url: `${env.PUBLIC_OBP_BASE_URL}${endpoint}`,
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer [REDACTED]'
+			},
+			body: null
+		};
+		try {
+			const response = await obp_requests.get(endpoint, accessToken);
+			debugCalls.push({ label, request, response });
+			return response;
+		} catch (error) {
+			debugCalls.push({
+				label,
+				request,
+				error: error instanceof Error ? error.message : String(error)
+			});
+			throw error;
+		}
+	}
+
 	try {
-		const response = await obp_requests.get(`/obp/dynamic-entity/${ENTITY_ACTIVITY}`, accessToken);
+		const response = await debugGet('Activities', `/obp/dynamic-entity/${ENTITY_ACTIVITY}`);
 		const activities = (response[`${ENTITY_ACTIVITY}_list`] || []) as Array<
 			Record<string, unknown> & { operator_id?: string }
 		>;
@@ -36,10 +79,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		// Kept in its own try so an operator-fetch failure still renders the activities.
 		const operatorNames = new Map<string, string>();
 		try {
-			const opResponse = await obp_requests.get(
-				`/obp/dynamic-entity/${ENTITY_OPERATOR}`,
-				accessToken
-			);
+			const opResponse = await debugGet('Operators', `/obp/dynamic-entity/${ENTITY_OPERATOR}`);
 			const operators = (opResponse[`${ENTITY_OPERATOR}_list`] || []) as OperatorRecord[];
 			for (const op of operators) {
 				if (op.operator_id && op.legal_name) operatorNames.set(op.operator_id, op.legal_name);
@@ -48,22 +88,27 @@ export const load: PageServerLoad = async ({ locals }) => {
 			// Operators unavailable — cards fall back to "Unknown operator".
 		}
 
-		// Resolve verification status per activity via activity_verification.activity_id.
-		// verifiedActivityIds = referenced by a verification whose status_code is "verified".
-		// Everything else (no record, in_progress, failed) counts as "unverified".
-		// Kept in its own try so a verification-fetch failure still renders the activities.
+		// Resolve verification status via OBP's one-hop join query: ask for activities
+		// that EXIST alongside an activity_verification whose status_code is "verified",
+		// instead of fetching the whole activity_verification table and joining in JS.
+		// Requires activity.activity_id, activity_verification.activity_id, and
+		// activity_verification.status_code to all be declared `indexed: true` — see
+		// [[ogcr-dynamic-entity-join-queries]] memory for why, and the OBP-API bug this
+		// tripped over. Everything not in this set (no record, in_progress, failed)
+		// counts as "unverified". Kept in its own try so a failure still renders activities.
 		const verifiedActivityIds = new Set<string>();
 		try {
-			const verResponse = await obp_requests.get(
-				`/obp/dynamic-entity/${ENTITY_ACTIVITY_VERIFICATION}`,
-				accessToken
+			const joinParams = new URLSearchParams();
+			joinParams.set(`obp_exists[${ENTITY_ACTIVITY_VERIFICATION}]`, 'filter[status_code]=eq:verified');
+			const verResponse = await debugGet(
+				'Verified activities (join query)',
+				`/obp/dynamic-entity/${ENTITY_ACTIVITY}?${joinParams.toString()}`
 			);
-			const verifications = (verResponse[`${ENTITY_ACTIVITY_VERIFICATION}_list`] || []) as Array<{
+			const verified = (verResponse[`${ENTITY_ACTIVITY}_list`] || []) as Array<{
 				activity_id?: string;
-				status_code?: string;
 			}>;
-			for (const v of verifications) {
-				if (v.activity_id && v.status_code === 'verified') verifiedActivityIds.add(v.activity_id);
+			for (const a of verified) {
+				if (a.activity_id) verifiedActivityIds.add(a.activity_id);
 			}
 		} catch {
 			// Verifications unavailable — the verification filter falls back to "All".
@@ -98,7 +143,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			isAuthenticated: true,
 			activities: enriched,
 			verifiedActivityIds: [...verifiedActivityIds],
-			rawResponse: response,
+			debugCalls,
 			error: null
 		};
 	} catch (error) {
@@ -107,6 +152,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				isAuthenticated: true,
 				activities: null,
 				verifiedActivityIds: [] as string[],
+				debugCalls,
 				error: error.message,
 				errorDetails: error.toJSON()
 			};
@@ -116,6 +162,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			isAuthenticated: true,
 			activities: null,
 			verifiedActivityIds: [] as string[],
+			debugCalls,
 			error: errorMessage
 		};
 	}

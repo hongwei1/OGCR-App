@@ -351,10 +351,20 @@
 			</div>
 		{/if}
 
-		<!-- Debug: raw response -->
-		<details class="mt-8">
-			<summary class="cursor-pointer text-sm text-surface-600-400">Debug: Raw API Response</summary>
-			<pre class="bg-surface-200-800 p-4 rounded overflow-auto text-xs mt-2">{JSON.stringify(data.rawResponse, null, 2)}</pre>
-		</details>
+		<!-- Debug: every OBP call made while loading this page (request + response/error) -->
+		{#each (data.debugCalls ?? []) as call, i (call.label + i)}
+			<details class={i === 0 ? 'mt-8' : 'mt-2'} open={i === 0}>
+				<summary class="cursor-pointer text-sm text-surface-600-400"
+					>Debug: {call.label} — Request</summary
+				>
+				<pre class="bg-surface-200-800 p-4 rounded overflow-auto text-xs mt-2">{JSON.stringify(call.request, null, 2)}</pre>
+			</details>
+			<details class="mt-2" open={i === 0}>
+				<summary class="cursor-pointer text-sm text-surface-600-400"
+					>Debug: {call.label} — {call.error ? 'Error' : 'Response'}</summary
+				>
+				<pre class="bg-surface-200-800 p-4 rounded overflow-auto text-xs mt-2">{JSON.stringify(call.error ?? call.response, null, 2)}</pre>
+			</details>
+		{/each}
 	{/if}
 </div>
