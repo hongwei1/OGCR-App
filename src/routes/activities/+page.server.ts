@@ -26,15 +26,20 @@ interface DebugCall {
 	error?: string;
 }
 
-export const load: PageServerLoad = async ({ locals }) => {
+const VALID_VERIFICATION_FILTERS = new Set(['all', 'verified', 'unverified']);
+
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = locals.session;
 	const accessToken = session.data.oauth?.access_token;
+
+	const rawVerification = url.searchParams.get('verification') ?? 'all';
+	const verificationFilter = VALID_VERIFICATION_FILTERS.has(rawVerification) ? rawVerification : 'all';
 
 	if (!accessToken) {
 		return {
 			isAuthenticated: false,
 			activities: null,
-			verifiedActivityIds: [] as string[],
+			verificationFilter,
 			debugCalls: [] as DebugCall[],
 			error: null
 		};
@@ -69,8 +74,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	}
 
+	// Push the verification filter down to OBP via a one-hop join query instead of
+	// fetching every activity and filtering client-side — the activity table can be
+	// far too large to hold in the browser/server-render memory in one go.
+	// Requires activity.activity_id, activity_verification.activity_id, and
+	// activity_verification.status_code to all be declared `indexed: true` — see
+	// [[ogcr-dynamic-entity-join-queries]] memory for why, and the OBP-API bug this
+	// tripped over.
+	let activityEndpoint = `/obp/dynamic-entity/${ENTITY_ACTIVITY}`;
+	if (verificationFilter !== 'all') {
+		const quantifier = verificationFilter === 'verified' ? 'obp_exists' : 'obp_not_exists';
+		const joinParams = new URLSearchParams();
+		joinParams.set(`${quantifier}[${ENTITY_ACTIVITY_VERIFICATION}]`, 'filter[status_code]=eq:verified');
+		activityEndpoint = `${activityEndpoint}?${joinParams.toString()}`;
+	}
+
 	try {
-		const response = await debugGet('Activities', `/obp/dynamic-entity/${ENTITY_ACTIVITY}`);
+		const response = await debugGet('Activities', activityEndpoint);
 		const activities = (response[`${ENTITY_ACTIVITY}_list`] || []) as Array<
 			Record<string, unknown> & { operator_id?: string }
 		>;
@@ -86,32 +106,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 			}
 		} catch {
 			// Operators unavailable — cards fall back to "Unknown operator".
-		}
-
-		// Resolve verification status via OBP's one-hop join query: ask for activities
-		// that EXIST alongside an activity_verification whose status_code is "verified",
-		// instead of fetching the whole activity_verification table and joining in JS.
-		// Requires activity.activity_id, activity_verification.activity_id, and
-		// activity_verification.status_code to all be declared `indexed: true` — see
-		// [[ogcr-dynamic-entity-join-queries]] memory for why, and the OBP-API bug this
-		// tripped over. Everything not in this set (no record, in_progress, failed)
-		// counts as "unverified". Kept in its own try so a failure still renders activities.
-		const verifiedActivityIds = new Set<string>();
-		try {
-			const joinParams = new URLSearchParams();
-			joinParams.set(`obp_exists[${ENTITY_ACTIVITY_VERIFICATION}]`, 'filter[status_code]=eq:verified');
-			const verResponse = await debugGet(
-				'Verified activities (join query)',
-				`/obp/dynamic-entity/${ENTITY_ACTIVITY}?${joinParams.toString()}`
-			);
-			const verified = (verResponse[`${ENTITY_ACTIVITY}_list`] || []) as Array<{
-				activity_id?: string;
-			}>;
-			for (const a of verified) {
-				if (a.activity_id) verifiedActivityIds.add(a.activity_id);
-			}
-		} catch {
-			// Verifications unavailable — the verification filter falls back to "All".
 		}
 
 		// Merge the marketplace listing overlay (marketing + commercial terms).
@@ -142,7 +136,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		return {
 			isAuthenticated: true,
 			activities: enriched,
-			verifiedActivityIds: [...verifiedActivityIds],
+			verificationFilter,
 			debugCalls,
 			error: null
 		};
@@ -151,7 +145,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			return {
 				isAuthenticated: true,
 				activities: null,
-				verifiedActivityIds: [] as string[],
+				verificationFilter,
 				debugCalls,
 				error: error.message,
 				errorDetails: error.toJSON()
@@ -161,7 +155,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		return {
 			isAuthenticated: true,
 			activities: null,
-			verifiedActivityIds: [] as string[],
+			verificationFilter,
 			debugCalls,
 			error: errorMessage
 		};
