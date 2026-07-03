@@ -17,6 +17,7 @@
 	} from '@lucide/svelte';
 	import { categorizeActivityType, CREDIT_CATEGORIES } from '$lib/constants/creditTypes';
 	import GeoJsonMap from '$lib/components/GeoJsonMap.svelte';
+	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 
@@ -47,12 +48,20 @@
 	let minPrice = $state('');
 	let maxPrice = $state('');
 	let minCredits = $state('');
-	let verificationStatus = $state('all');
 
-	// Verification lookup derived from activity_verification (see +page.server.ts):
-	// verifiedIds = activities with a "verified" verification. Everything else
-	// (no record, in_progress, failed) counts as "unverified".
-	const verifiedIds = $derived(new Set((data.verifiedActivityIds ?? []) as string[]));
+	// Verification status is applied server-side (see +page.server.ts): the activity
+	// table can be far too large to load in full and filter in the browser, so
+	// `data.activities` already reflects the current verificationFilter. Changing the
+	// dropdown navigates to a new `?verification=` value, which re-runs load().
+	const verificationStatus = $derived(data.verificationFilter ?? 'all');
+
+	function setVerificationStatus(value: string) {
+		const params = new URLSearchParams(window.location.search);
+		if (value === 'all') params.delete('verification');
+		else params.set('verification', value);
+		const qs = params.toString();
+		goto(qs ? `?${qs}` : '?', { keepFocus: true, noScroll: true });
+	}
 
 	const countries = $derived(
 		[...new Set(activities.map((a) => a.country_code).filter(Boolean))].sort() as string[]
@@ -80,12 +89,8 @@
 			if (categoryKey !== 'all' && cat.key !== categoryKey) return false;
 			if (country !== 'all' && a.country_code !== country) return false;
 
-			// Verification status filter (see issue #1):
-			//   verified   = has a verification whose status_code is "verified"
-			//   unverified = anything else (no record, in_progress, failed)
-			const isVerified = !!(a.activity_id && verifiedIds.has(a.activity_id));
-			if (verificationStatus === 'verified' && !isVerified) return false;
-			if (verificationStatus === 'unverified' && isVerified) return false;
+			// Verification status (see issue #1) is already applied server-side —
+			// `activities` only contains rows matching the current verificationStatus.
 
 			// Price / credits filters only exclude when the field actually exists,
 			// so cards without that data yet are never hidden.
@@ -115,10 +120,10 @@
 		query = '';
 		categoryKey = 'all';
 		country = 'all';
-		verificationStatus = 'all';
 		minPrice = '';
 		maxPrice = '';
 		minCredits = '';
+		if (verificationStatus !== 'all') setVerificationStatus('all');
 	}
 
 	function region(a: ActivityRow): string {
@@ -251,7 +256,11 @@
 
 				<label class="label">
 					<span class="label-text">Verification status</span>
-					<select bind:value={verificationStatus} class="select">
+					<select
+						value={verificationStatus}
+						onchange={(e) => setVerificationStatus(e.currentTarget.value)}
+						class="select"
+					>
 						<option value="all">All</option>
 						<option value="verified">Verified</option>
 						<option value="unverified">Unverified</option>
