@@ -20,7 +20,13 @@ export const SITE_MAP: Record<string, PageRoleConfig> = {
 	}
 };
 
+// Matches the route itself and any of its sub-routes (e.g. `/activities/create`,
+// `/activities/[id]`), since SvelteKit's `route.id` differs per page under a section but
+// all of them need the same gate as the section's index page.
 export function getPageRoles(routeId: string | null): PageRoleConfig | undefined {
 	if (!routeId) return undefined;
-	return SITE_MAP[routeId];
+	if (SITE_MAP[routeId]) return SITE_MAP[routeId];
+	return Object.entries(SITE_MAP).find(
+		([prefix]) => routeId === prefix || routeId.startsWith(`${prefix}/`)
+	)?.[1];
 }

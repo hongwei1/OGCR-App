@@ -20,6 +20,17 @@
 	let roleNames = $derived(missing.map((m) => m.role));
 	let anyBankScoped = $derived(missing.some((m) => m.bankId));
 
+	// PageRoleCheck keeps this component mounted across navigations as long as the
+	// surrounding page keeps failing its role check, so a stale success/error message
+	// from a previous page's `missing` set must not leak into the next one.
+	let missingKey = $derived(missing.map((m) => `${m.role}|${m.bankId ?? ''}`).join(','));
+	$effect(() => {
+		missingKey;
+		isSubmitting = false;
+		submitSuccess = false;
+		submitError = null;
+	});
+
 	async function handleRequestClick() {
 		if (isSubmitting) return;
 		isSubmitting = true;
@@ -43,6 +54,7 @@
 			submitSuccess = true;
 		} catch (error) {
 			submitError = error instanceof Error ? error.message : 'Failed to submit request';
+		} finally {
 			isSubmitting = false;
 		}
 	}
